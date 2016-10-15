@@ -10,35 +10,136 @@ import UIKit
 import CoreData
 
 class ViewController: UIViewController {
+    //MARK: Properties
     @IBOutlet weak var name: UITextField!
     @IBOutlet weak var label: UILabel!
     @IBOutlet weak var logInButton: UIButton!
-
-    @IBAction func logIn(_ sender: AnyObject) {
+    @IBOutlet weak var logOutButton: UIButton!
+    var isloggedIn = false
+    
+    //MARK: Actions
+    @IBAction func logOut(_ sender: AnyObject) {
+        
         
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         
         let context = appDelegate.persistentContainer.viewContext
         
-        let newValue = NSEntityDescription.insertNewObject(forEntityName: "Users", into: context)
+        let request  = NSFetchRequest<NSFetchRequestResult>(entityName: "Users")
         
-        newValue.setValue(name.text, forKey: "name")
-        
-        do{
-        
-            try context.save()
+        do {
+            let results = try context.fetch(request)
             
-            name.alpha = 0
-            
-            logInButton.alpha = 0
-            
-            label.alpha = 1
-            
-            label.text = "Hi there " + name.text! + "!"
-            
-        }catch{
-            print("Fail to saved")
+            if results.count > 0 {
+                for result in results as! [NSManagedObject] {
+                    
+                    context.delete(result )
+                    do{
+                    
+                        try context.save()
+                        
+                    } catch {
+                        print("Individual Delete Failed")
+                    }
+            }
+                
+                
+                
+                logOutButton.alpha = 0
+                
+                name.text = ""
+                
+                logInButton.setTitle("Login", for: [])
+                
+                name.alpha = 1
+                
+                logInButton.alpha = 1
+                
+                label.alpha = 0 
+                
+                isloggedIn = false
+                
+               
         }
+        
+            
+        } catch {
+            print("Delete Failed")
+        }
+        
+        
+        
+    }
+     @IBAction func logIn(_ sender: AnyObject) {
+        
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        
+        let context = appDelegate.persistentContainer.viewContext
+        
+        if isloggedIn{
+            
+            let request  = NSFetchRequest<NSFetchRequestResult>(entityName: "Users")
+
+            do {
+                
+                let results = try context.fetch(request)
+                
+                if results.count > 0 {
+                    
+                    for result in results as! [NSManagedObject] {
+                        
+                        result.setValue(name.text, forKey: "name")
+                        
+                        do {
+                        
+                            try context.save()
+                            
+                        } catch {
+                        
+                        }
+                    }
+                    
+                    label.text = "Hi there " + name.text! + "!"
+                }
+                
+            } catch {
+                print("Update Username Failed")
+            }
+        
+        }
+        else {
+            
+            let newValue = NSEntityDescription.insertNewObject(forEntityName: "Users", into: context)
+            
+            newValue.setValue(name.text, forKey: "name")
+            
+            do{
+                
+                try context.save()
+                
+                name.alpha = 0
+                
+
+                
+                logInButton.setTitle("Update username", for: [])
+
+                
+                label.alpha = 1
+                
+                logOutButton.alpha = 1
+                
+                label.text = "Hi there " + name.text! + "!"
+                
+                isloggedIn = true
+                
+                name.alpha = 1
+                
+            }catch{
+                print("Fail to saved")
+            }
+        }
+        
+       
     }
     
     override func viewDidLoad() {
@@ -60,11 +161,13 @@ class ViewController: UIViewController {
             
                 if let usermane =  result.value(forKey: "name") as? String  {
                 
-                    name.alpha = 0
+                    name.alpha = 1
                     
-                    logInButton.alpha = 0
+                    logInButton.setTitle("Update username", for: [])
                     
                     label.alpha = 1
+                    
+                    logOutButton.alpha = 1
                     
                     label.text = "Hi there " + usermane + "!"
                 }
